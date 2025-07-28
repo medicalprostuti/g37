@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>সাধারণ জ্ঞান অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "বাংলা একাডেমি কোন বছর প্রতিষ্ঠিত হয়?",
+          options: {
+            a: "১৯৫৫ খ্রিস্টাব্দে",
+            b: "১৩৫৫ বঙ্গাব্দে",
+            c: "১৯৫২ খ্রিস্টাব্দে",
+            d: "১৩৫২ বঙ্গাব্দে",
+          },
+          correct: "a",
+          explanation:
+            "<p>বাংলা একাডেমি ১৯৫৫ সালের ৩ ডিসেম্বর প্রতিষ্ঠিত হয়। ১৯৫২ সালের ভাষা আন্দোলনের পথ ধরেই বাংলা ভাষার গবেষণা, উন্নয়ন এবং প্রসারের লক্ষ্যে এই প্রতিষ্ঠানটি প্রতিষ্ঠিত হয়। এটি বাংলা ভাষা ও সাহিত্যের গবেষণা, প্রকাশনা, অভিধান প্রণয়ন এবং সাংস্কৃতিক কর্মকাণ্ডে গুরুত্বপূর্ণ ভূমিকা পালন করে আসছে।</p>",
+        },
+        {
+          id: 2,
+          question: "‘অমর একুশে' শীর্ষক কবিতার কবির নাম কী?",
+          options: {
+            a: "আবু জাফর শামসুদ্দিন",
+            b: "শামসুর রহমান",
+            c: "আলাউদ্দিন আল আজাদ",
+            d: "আব্দুল গাফফার চৌধুরী",
+          },
+          correct: "d",
+          explanation:
+            "<p>‘অমর একুশে' শীর্ষক কবিতার সঠিক উত্তরটি হলো আব্দুল গাফফার চৌধুরী। এই কবিতাটি পরবর্তীতে 'আমার ভাইয়ের রক্তে রাঙানো একুশে ফেব্রুয়ারি, আমি কি ভুলিতে পারি' গান হিসেবে পরিচিতি লাভ করে। ভাষা আন্দোলনের ওপর ভিত্তি করে রচিত এই গানটি বাঙালি জাতির আত্মত্যাগের প্রতীক হিসেবে চিরস্মরণীয়।</p>",
+        },
+        {
+          id: 3,
+          question: "ঢাকা-ময়মনসিংহ অঞ্চলের ঐতিহ্যবাহী নৃত্যের নাম-",
+          options: {
+            a: "জারি",
+            b: "ধুনুচি",
+            c: "ধূপ",
+            d: "ঝুমুর",
+          },
+          correct: "a",
+          explanation:
+            "<p>ঢাকা-ময়মনসিংহ অঞ্চলের ঐতিহ্যবাহী নৃত্যের নাম জারি। জারি গান ও নৃত্য এই অঞ্চলের লোকসংস্কৃতির একটি অবিচ্ছেদ্য অংশ। বিশেষ করে পীর-ফকিরদের জীবন ও কারবালা প্রান্তরের শোকাবহ ঘটনাকে কেন্দ্র করে এই নাচ ও গান পরিবেশিত হয়। এটি এক প্রকার লোকনৃত্য যা সাধারণত পুরুষদের দ্বারা পরিবেশিত হয় এবং এতে ছন্দবদ্ধ গতি ও দলবদ্ধ অংশগ্রহণ দেখা যায়।</p>",
+        },
+        {
+          id: 4,
+          question: "আন্তর্জাতিক মাতৃভাষা ইনস্টিটিউট কোথায় অবস্থিত?",
+          options: {
+            a: "ঢাকা",
+            b: "চট্টগ্রাম",
+            c: "কুমিল্লা",
+            d: "খুলনা",
+          },
+          correct: "a",
+          explanation:
+            "<p>আন্তর্জাতিক মাতৃভাষা ইনস্টিটিউট বাংলাদেশের রাজধানী ঢাকায় অবস্থিত। এটি ২০১১ সালে প্রতিষ্ঠিত হয় এবং মাতৃভাষা গবেষণা, সংরক্ষণ, উন্নয়ন এবং বিভিন্ন ভাষার প্রতি সম্মান প্রদর্শনের জন্য কাজ করে। এটি UNESCO-এর সহযোগিতায় পরিচালিত হয় এবং ভাষা বৈচিত্র্য রক্ষায় গুরুত্বপূর্ণ ভূমিকা রাখে।</p>",
+        },
+        {
+          id: 5,
+          question: "‘গণহত্যা যাদুঘর' কোথায় অবস্থিত?",
+          options: {
+            a: "ঢাকা সেনানিবাস",
+            b: "সেগুনবাগিচা",
+            c: "খুলনায়",
+            d: "ঢাকা বিশ্ববিদ্যালয়",
+          },
+          correct: "c",
+          explanation:
+            "<p>‘গণহত্যা যাদুঘর' বাংলাদেশের খুলনা শহরে অবস্থিত। এটি ১৯৭১ সালের মুক্তিযুদ্ধে সংঘটিত গণহত্যার স্মৃতি সংরক্ষণ এবং ভবিষ্যৎ প্রজন্মের কাছে ইতিহাস তুলে ধরার জন্য প্রতিষ্ঠিত হয়েছে। এই যাদুঘরটি গণহত্যার শিকার ব্যক্তিদের স্মরণে এবং মানবতাবিরোধী অপরাধের বিরুদ্ধে সচেতনতা বাড়াতে কাজ করে।</p>",
+        },
+        {
+          id: 6,
+          question: "‘মনপুরা-৭০' চিত্রকর্মটি কে এঁকেছেন?",
+          options: {
+            a: "কামরুল হাসান",
+            b: "জয়নুল আবেদিন",
+            c: "মকবুল ফিদা হোসেন",
+            d: "মুর্তাজা বশির",
+          },
+          correct: "b",
+          explanation:
+            "<p>‘মনপুরা-৭০' চিত্রকর্মটি এঁকেছেন শিল্পাচার্য জয়নুল আবেদিন। ১৯৭০ সালের ভয়াবহ ঘূর্ণিঝড় এবং জলোচ্ছ্বাসের পর প্রাকৃতিক দুর্যোগের ভয়াবহতা এবং মানুষের দুর্দশাকে তিনি তার এই চিত্রকর্মের মাধ্যমে ফুটিয়ে তুলেছেন। এই কাজটি তার মানবিকতাবোধ ও সামাজিক প্রতিশ্রুতির এক উজ্জ্বল দৃষ্টান্ত।</p>",
+        },
+        {
+          id: 7,
+          question: "‘রেহেনা মরিয়ম নূর' চলচ্চিত্রটি পরিচালনা করেন?",
+          options: {
+            a: "জেরেমি চুয়া",
+            b: "আবদুল্লাহ মোহাম্মদ সাদ",
+            c: "রাজীব মহাজন",
+            d: "আজমেরী হক বাঁধন",
+          },
+          correct: "b",
+          explanation:
+            "<p>‘রেহেনা মরিয়ম নূর' চলচ্চিত্রটি পরিচালনা করেন আবদুল্লাহ মোহাম্মদ সাদ। ২০২১ সালে কান চলচ্চিত্র উৎসবের 'আন সার্টেন রিগার্ড' বিভাগে নির্বাচিত এটিই বাংলাদেশের প্রথম চলচ্চিত্র। চলচ্চিত্রটি একজন মেডিকেল কলেজের শিক্ষকের সংগ্রামকে কেন্দ্র করে আবর্তিত হয়েছে এবং এটি আন্তর্জাতিক মহলে ব্যাপক প্রশংসা লাভ করেছে।</p>",
+        },
+        {
+          id: 8,
+          question: "BARD-এর প্রতিষ্ঠাতা কে?",
+          options: {
+            a: "আখতার হামিদ খান",
+            b: "ফজলে হাসান আবেদ",
+            c: "মাহবুব আলম চৌধুরি",
+            d: "সাইমন ড্রিং",
+          },
+          correct: "a",
+          explanation:
+            "<p>BARD (Bangladesh Academy for Rural Development)-এর প্রতিষ্ঠাতা হলেন ড. আখতার হামিদ খান। তিনি বাংলাদেশের গ্রামীণ উন্নয়নের পথিকৃৎ হিসেবে পরিচিত। ১৯৫৯ সালে তিনি কুমিল্লায় এই প্রতিষ্ঠানটি স্থাপন করেন, যা গ্রামীণ উন্নয়ন, গবেষণা এবং প্রশিক্ষণ কার্যক্রমে গুরুত্বপূর্ণ ভূমিকা রাখে। তার হাতেই কুমিল্লা মডেলের মতো সফল গ্রামীণ উন্নয়ন প্রকল্প গড়ে ওঠে।</p>",
+        },
+        {
+          id: 9,
+          question: "'লালসালু' চলচ্চিত্রটির পরিচালক কে?",
+          options: {
+            a: "তানভীর মোকাম্মেল",
+            b: "মোরশেদুল ইসলাম",
+            c: "তারেক মাসুদ",
+            d: "সৈয়দ ওয়ালিউল্লাহ",
+          },
+          correct: "a",
+          explanation:
+            "<p>'লালসালু' চলচ্চিত্রটির পরিচালক তানভীর মোকাম্মেল। এটি সৈয়দ ওয়ালিউল্লাহর বিখ্যাত উপন্যাস 'লালসালু' অবলম্বনে নির্মিত হয়েছে। চলচ্চিত্রটি সমাজের কুসংস্কার, ধর্মীয় ভণ্ডামি এবং গ্রামীণ জীবনের বাস্তবতা ফুটিয়ে তুলেছে।</p>",
+        },
+        {
+          id: 10,
+          question: "‘জাগো বাহে কুণ্ঠে সবাই' – এটি কোন বিখ্যাত নাটকের সংলাপ?",
+          options: {
+            a: "পায়ের আওয়াজ পাওয়া যায়",
+            b: "মেরাজ ফকিরের মা",
+            c: "নীল দর্পণ",
+            d: "নূরলদীনের সারাজীবন",
+          },
+          correct: "d",
+          explanation:
+            "<p>‘জাগো বাহে কুণ্ঠে সবাই' সংলাপটি সৈয়দ শামসুল হক রচিত বিখ্যাত নাটক ‘নূরলদীনের সারাজীবন' থেকে নেওয়া হয়েছে। এই সংলাপটি নাটকের কেন্দ্রীয় চরিত্র নূরলদীনের স্বাধীনতা সংগ্রামের আহ্বানকে প্রকাশ করে এবং এটি বাংলা নাটকের ইতিহাসে একটি অবিস্মরণীয় অংশ।</p>",
+        },
+        {
+          id: 11,
+          question: "নিচের কোনটি মুক্তিযুদ্ধভিত্তিক স্বল্পদৈর্ঘ্য চলচ্চিত্র?",
+          options: {
+            a: "ধীরে বহে মেঘনা",
+            b: "কলমিলতা",
+            c: "আবার তোরা মানুষ হ",
+            d: "হুলিয়া",
+          },
+          correct: "d",
+          explanation:
+            "<p>মুক্তিযুদ্ধভিত্তিক স্বল্পদৈর্ঘ্য চলচ্চিত্রগুলোর মধ্যে 'হুলিয়া' অন্যতম। এটি মূলত আখতারুজ্জামান ইলিয়াসের একই নামের ছোটগল্প অবলম্বনে নির্মিত। 'ধীরে বহে মেঘনা' এবং 'আবার তোরা মানুষ হ' পূর্ণদৈর্ঘ্য চলচ্চিত্র। 'কলমিলতা' মুক্তিযুদ্ধভিত্তিক চলচ্চিত্র নয়।</p>",
+        },
+        {
+          id: 12,
+          question: "জীবন ঢুলী কী?",
+          options: {
+            a: "একটি উপন্যাসের নাম",
+            b: "একটি আত্মজীবনীর নাম",
+            c: "একটি কাব্যগ্রন্থের নাম",
+            d: "একটি চলচ্চিত্রের নাম",
+          },
+          correct: "d",
+          explanation:
+            "<p>জীবন ঢুলী হলো একটি চলচ্চিত্রের নাম। এটি তানভীর মোকাম্মেল পরিচালিত একটি চলচ্চিত্র, যা ১৯৭১ সালের মুক্তিযুদ্ধের প্রেক্ষাপটে নির্মিত হয়েছে। এটি একজন ঢুলির জীবন ও মুক্তিযুদ্ধে তার ভূমিকার উপর আলোকপাত করে।</p>",
+        },
+        {
+          id: 13,
+          question: "বাংলাদেশে টেলিভিশনের যাত্রা শুরু হয় কত সালে?",
+          options: {
+            a: "১৯৪৭ খ্রি.",
+            b: "১৯৫৮ খ্রি.",
+            c: "১৯৬৪ খ্রি.",
+            d: "১৯৬৫ খ্রি.",
+          },
+          correct: "c",
+          explanation:
+            "<p>বাংলাদেশে টেলিভিশনের যাত্রা শুরু হয় ১৯৬৪ সালের ২৫ ডিসেম্বর। তৎকালীন পাকিস্তান টেলিভিশনের ঢাকা কেন্দ্র উদ্বোধনের মাধ্যমে এর সূচনা হয়, যা পরবর্তীতে বাংলাদেশ টেলিভিশন (বিটিভি) নামে পরিচিতি লাভ করে। এর মাধ্যমে বাংলাদেশে গণযোগাযোগ ও বিনোদনের এক নতুন দিগন্ত উন্মোচিত হয়।</p>",
+        },
+        {
+          id: 14,
+          question: "বাংলা একাডেমির প্রথম মহাপরিচালক কে ছিলেন?",
+          options: {
+            a: "প্রফেসর আব্দুল হাই",
+            b: "ড. মুহম্মদ শহীদুল্লাহ",
+            c: "কাজী মোতাহার হোসেন",
+            d: "ড. এনামুল হক",
+          },
+          correct: "d",
+          explanation:
+            "<p>বাংলা একাডেমির প্রথম মহাপরিচালক ছিলেন ড. এনামুল হক। তিনি ১৯৫৫ সালে বাংলা একাডেমি প্রতিষ্ঠার পর এই গুরুত্বপূর্ণ পদে দায়িত্ব পালন করেন এবং প্রতিষ্ঠানটির প্রাথমিক কার্যক্রমে গুরুত্বপূর্ণ ভূমিকা রাখেন।</p>",
+        },
+        {
+          id: 15,
+          question:
+            "বিখ্যাত চলচ্চিত্রকার সত্যজিৎ রায়ের পূর্বপুরুষের নিবাস কোথায়?",
+          options: {
+            a: "গাইবান্ধা",
+            b: "যশোর",
+            c: "ময়মনসিংহ",
+            d: "কিশোরগঞ্জ",
+          },
+          correct: "d",
+          explanation:
+            "<p>বিখ্যাত চলচ্চিত্রকার সত্যজিৎ রায়ের পূর্বপুরুষের নিবাস ছিল বাংলাদেশের কিশোরগঞ্জ জেলার কটিয়াদী উপজেলার মসূয়া গ্রামে। তার পিতামহ উপেন্দ্রকিশোর রায়চৌধুরী এবং পিতা সুকুমার রায় এই অঞ্চলেরই সন্তান ছিলেন।</p>",
+        },
+        {
+          id: 16,
+          question:
+            "বাংলাদেশের একমাত্র কিশোরী সংশোধন প্রতিষ্ঠানটি কোথায় অবস্থিত?",
+          options: {
+            a: "টঙ্গি",
+            b: "কোনাবাড়ি",
+            c: "যশোর",
+            d: "গাজীপুর",
+          },
+          correct: "c",
+          explanation:
+            "<p>বাংলাদেশের একমাত্র কিশোরী সংশোধন প্রতিষ্ঠানটি যশোরে অবস্থিত। এটি কিশোরী অপরাধীদের সংশোধন ও পুনর্বাসনের জন্য প্রতিষ্ঠিত হয়েছে, যাতে তারা সমাজে সুস্থ ও স্বাভাবিক জীবনযাপন করতে পারে।</p>",
+        },
+        {
+          id: 17,
+          question: "বাংলাদেশের বিখ্যাত মণিপুরী নাচ কোন অঞ্চলের?",
+          options: {
+            a: "রাঙামাটি",
+            b: "রংপুর",
+            c: "কুমিল্লা",
+            d: "সিলেট",
+          },
+          correct: "d",
+          explanation:
+            "<p>বাংলাদেশের বিখ্যাত মণিপুরী নাচ সিলেট অঞ্চলের। বিশেষ করে সিলেটের মৌলভীবাজার জেলার কমলগঞ্জ উপজেলায় মণিপুরী জনগোষ্ঠীর বসবাস বেশি এবং সেখানেই এই নৃত্যের প্রচলন ও বিকাশ দেখা যায়। এটি তাদের সংস্কৃতি ও ঐতিহ্যের একটি গুরুত্বপূর্ণ অংশ।</p>",
+        },
+        {
+          id: 18,
+          question:
+            "'ধনধান্যে পুষ্প ভরা আমাদের এই বসুন্ধরা'- চরণের রচয়িতা কে?",
+          options: {
+            a: "যতীন্দ্রমোহন বাগচী",
+            b: "কাজী নজরুল ইসলাম",
+            c: "দ্বিজেন্দ্রলাল রায়",
+            d: "রবীন্দ্রনাথ ঠাকুর",
+          },
+          correct: "c",
+          explanation:
+            "<p>'ধনধান্যে পুষ্প ভরা আমাদের এই বসুন্ধরা' – এই অমর চরণের রচয়িতা হলেন দ্বিজেন্দ্রলাল রায়। এটি তার 'আমার জন্মভূমি' গানের অংশ, যা বাংলাদেশের প্রাকৃতিক সৌন্দর্য ও সমৃদ্ধিকে তুলে ধরে। গানটি বাঙালি সংস্কৃতির একটি অবিচ্ছেদ্য অংশ হিসেবে পরিচিত।</p>",
+        },
+        {
+          id: 19,
+          question: "প্রথম বাঙ্গালি মুসলিম কবি কে?",
+          options: {
+            a: "কায়কোবাদ",
+            b: "শাহ মুহম্মদ সগীর",
+            c: "আলাওল",
+            d: "আব্দুল হাকিম",
+          },
+          correct: "b",
+          explanation:
+            "<p>বাংলা সাহিত্যের প্রথম বাঙালি মুসলিম কবি হলেন শাহ মুহম্মদ সগীর। তিনি চতুর্দশ শতাব্দীর শেষ ভাগ এবং পঞ্চদশ শতাব্দীর প্রথমার্ধের কবি ছিলেন। তার বিখ্যাত কাব্যগ্রন্থ হলো 'ইউসুফ-জুলেখা'।</p>",
+        },
+        {
+          id: 20,
+          question:
+            "‘সালাম সালাম হাজার সালাম সকল শহীদ স্মরণে' গানের কণ্ঠশিল্পী কে?",
+          options: {
+            a: "আপেল মাহমুদ",
+            b: "সৈয়দ আব্দুল হাদী",
+            c: " মাহমুদুন্নবী",
+            d: "আব্দুল জব্বার",
+          },
+          correct: "d",
+          explanation:
+            "<p>‘সালাম সালাম হাজার সালাম সকল শহীদ স্মরণে' এই কালজয়ী গানটির কণ্ঠশিল্পী হলেন আব্দুল জব্বার। এটি বাংলাদেশের মুক্তিযুদ্ধকালীন একটি অত্যন্ত জনপ্রিয় গান, যা মুক্তিযোদ্ধাদের অনুপ্রাণিত করেছিল এবং শহীদের প্রতি শ্রদ্ধা নিবেদনে ব্যবহৃত হয়।</p>",
+        },
+        {
+          id: 21,
+          question: "'সোজন বাদিয়ার ঘাট'-এর লেখক কে?",
+          options: {
+            a: "যতীন্দ্রমোহন বাগচী",
+            b: "কাজী নজরুল ইসলাম",
+            c: "জসীম উদ্দিন",
+            d: "রবীন্দ্রনাথ ঠাকুর",
+          },
+          correct: "c",
+          explanation:
+            "<p>'সোজন বাদিয়ার ঘাট' পল্লীকবি জসীম উদ্দীনের একটি বিখ্যাত কাব্যগ্রন্থ। এটি গ্রাম বাংলার জীবন, প্রেম, বিরহ ও প্রকৃতির চিত্র অত্যন্ত সুন্দরভাবে ফুটিয়ে তুলেছে। জসীম উদ্দীন বাংলা সাহিত্যে পল্লী প্রকৃতির কবি হিসেবে পরিচিত।</p>",
+        },
+        {
+          id: 22,
+          question: "কোন কাব্যগ্রন্থটি পল্লী কবি জসীম উদ্দিনের রচিত?",
+          options: {
+            a: "আলো পৃথিবী",
+            b: "ফনিমনসা",
+            c: "চৈতালী",
+            d: "রাখালী",
+          },
+          correct: "d",
+          explanation:
+            "<p>পল্লী কবি জসীম উদ্দিনের রচিত কাব্যগ্রন্থ হলো 'রাখালী'। এটি তার প্রথম কাব্যগ্রন্থ, যা ১৯২৭ সালে প্রকাশিত হয়। এই কাব্যগ্রন্থে পল্লী বাংলার জীবন, প্রকৃতি এবং মানুষের সহজ সরল আবেগ অত্যন্ত সুন্দরভাবে ফুটে উঠেছে।</p>",
+        },
+        {
+          id: 23,
+          question: "‘জয় বাংলা বাংলার জয়' গানটির গীতিকার কে?",
+          options: {
+            a: "গাজী মাজহারুল আনোয়ার",
+            b: "সিকান্দার আবু জাফর",
+            c: "নজরুল ইসলাম বাবু",
+            d: "গোবিন্দ হালদার",
+          },
+          correct: "d",
+          explanation:
+            "<p>‘জয় বাংলা বাংলার জয়' এই বিখ্যাত দেশাত্মবোধক গানটির গীতিকার হলেন গোবিন্দ হালদার। ১৯৭১ সালের মুক্তিযুদ্ধে এই গানটি মুক্তিযোদ্ধাদের প্রেরণা জুগিয়েছে এবং এটি বাংলাদেশের স্বাধীনতা সংগ্রামের প্রতীকী গানগুলোর মধ্যে অন্যতম।</p>",
+        },
+        {
+          id: 24,
+          question: "নিচের কোনটি বিদ্রোহী কবি কাজী নজরুল ইসলাম কর্তৃক রচিত?",
+          options: {
+            a: "অগ্নিবীণা",
+            b: "গীতাঞ্জলী",
+            c: "মেঘনাদবধ কাব্য",
+            d: "চিরকুমার সভা",
+          },
+          correct: "a",
+          explanation:
+            "<p>বিদ্রোহী কবি কাজী নজরুল ইসলাম কর্তৃক রচিত কাব্যগ্রন্থ 'অগ্নিবীণা'। এটি তার প্রথম কাব্যগ্রন্থ, যা ১৯২২ সালে প্রকাশিত হয়। এই কাব্যগ্রন্থের কবিতাগুলোতে বিদ্রোহ, প্রেম, সাম্য এবং মানবতাবাদের উজ্জ্বল প্রকাশ ঘটেছে। গীতাঞ্জলী রবীন্দ্রনাথ ঠাকুর, মেঘনাদবধ কাব্য মাইকেল মধুসূদন দত্ত এবং চিরকুমার সভা রবীন্দ্রনাথ ঠাকুর রচিত।</p>",
+        },
+        {
+          id: 25,
+          question:
+            "কবিগুরু রবীন্দ্রনাথ ঠাকুরের ‘কালের যাত্রা' নাটকটি কাকে উৎসর্গ করেন?",
+          options: {
+            a: "লোকেন্দ্রনাথ পালিত",
+            b: "সুভাষ চন্দ্র বসু",
+            c: "কাজী নজরুল ইসলাম",
+            d: "শরৎচন্দ্র চট্টোপাধ্যায়",
+          },
+          correct: "c",
+          explanation:
+            "<p>কবিগুরু রবীন্দ্রনাথ ঠাকুর তার 'কালের যাত্রা' নাটকটি বাংলাদেশের জাতীয় কবি কাজী নজরুল ইসলামকে উৎসর্গ করেন। ১৯৩২ সালে এই নাটকটি প্রকাশিত হয় এবং রবীন্দ্রনাথ নজরুলকে তার 'বসন্ত' নাটকটিও উৎসর্গ করেছিলেন। এই উৎসর্গীকরণ দুই মহান কবির পারস্পরিক শ্রদ্ধা ও ভালোবাসার প্রতীক।</p>",
+        },
+        {
+          id: 26,
+          question:
+            "রবীন্দ্রনাথ ঠাকুরের ‘আমার সোনার বাংলা' কবিতার কতটুকু বাংলাদেশের জাতীয় সঙ্গীত হিসেবে গৃহীত হয়েছে?",
+          options: {
+            a: "৮টি চরণ",
+            b: "৯টি চরণ",
+            c: "১০টি চরণ",
+            d: "১১টি চরণ",
+          },
+          correct: "c",
+          explanation:
+            "<p>রবীন্দ্রনাথ ঠাকুরের 'আমার সোনার বাংলা' কবিতার প্রথম ১০টি চরণ বাংলাদেশের জাতীয় সঙ্গীত হিসেবে গৃহীত হয়েছে। ১৯০৫ সালে বঙ্গভঙ্গ আন্দোলনের সময় এই গানটি রচিত হয়। এটি বাংলাদেশের প্রকৃতি, সৌন্দর্য এবং স্বাধীনতাসংগ্রামের প্রতীক হিসেবে পরিচিত।</p>",
+        },
+        {
+          id: 27,
+          question:
+            "'মোরা একটি ফুলকে বাঁচাবো বলে যুদ্ধ করি'-এই গানটির শিল্পী কে?",
+          options: {
+            a: "আব্দুল জব্বার",
+            b: "আপেল মাহমুদ",
+            c: "আবদুল হাদী",
+            d: " মাহমুদুন্নবী",
+          },
+          correct: "b",
+          explanation:
+            "<p>'মোরা একটি ফুলকে বাঁচাবো বলে যুদ্ধ করি'—এই কালজয়ী গানটির শিল্পী আপেল মাহমুদ। এটি বাংলাদেশের মুক্তিযুদ্ধকালীন একটি অত্যন্ত জনপ্রিয় গান, যা মুক্তিযোদ্ধাদের অনুপ্রেরণা জুগিয়েছে এবং যুদ্ধের চেতনাকে ধারণ করে।</p>",
+        },
+        {
+          id: 28,
+          question: "কাজী নজরুল ইসলামের উপন্যাস কোনটি?",
+          options: {
+            a: "মৃত্যুক্ষুধা",
+            b: "সঞ্চয়িতা",
+            c: "অগ্নিবীণা",
+            d: "ফনিমনসা",
+          },
+          correct: "a",
+          explanation:
+            "<p>কাজী নজরুল ইসলামের উপন্যাস হলো 'মৃত্যুক্ষুধা'। এটি ১৯৩০ সালে প্রকাশিত হয় এবং দরিদ্র গ্রামীণ জীবন, মানুষের কষ্ট এবং সামাজিক বাস্তবতাকে তুলে ধরে। 'সঞ্চয়িতা' রবীন্দ্রনাথ ঠাকুরের কাব্য সংকলন, 'অগ্নিবীণা' কাজী নজরুল ইসলামের কাব্যগ্রন্থ এবং 'ফনিমনসা'ও তার কাব্যগ্রন্থ।</p>",
+        },
+        {
+          id: 29,
+          question: "‘জোছনা ও জননীর গল্প' উপন্যাসটির রচয়িতা কে?",
+          options: {
+            a: "সৈয়দ শামসুল হক",
+            b: "মুহম্মদ জাফর ইকবাল",
+            c: "হুমায়ূন আহমেদ",
+            d: "মুনতাসীর মামুন",
+          },
+          correct: "c",
+          explanation:
+            "<p>‘জোছনা ও জননীর গল্প' উপন্যাসটির রচয়িতা জনপ্রিয় লেখক হুমায়ূন আহমেদ। এটি বাংলাদেশের স্বাধীনতা যুদ্ধকে কেন্দ্র করে লেখা একটি বৃহৎ উপন্যাস, যেখানে মুক্তিযুদ্ধের সময়ের মানুষের আবেগ, কষ্ট, বীরত্ব এবং বাস্তবতাকে অত্যন্ত জীবন্তভাবে ফুটিয়ে তোলা হয়েছে।</p>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                                                                                  <label class="option" data-option="${option}">
+                                                                                    <div class="circle">${option}</div>
+                                                                                    <span class="option-text">${question.options[option]}</span>
+                                                                                  </label>
+                                                                                `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                                                                     <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                                                                     <div class="explanation-content">
+                                                                                       <div class="explanation-label">ব্যাখ্যা:</div>
+                                                                                       ${question.explanation}
+                                                                                     </div>
+                                                                                   </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                                                                <p class="question-label">${
+                                                                                  index +
+                                                                                  1
+                                                                                }. ${
+            question.question
+          }</p>
+                                                                                <div class="options">
+                                                                                  ${optionsHTML}
+                                                                                </div>
+                                                                                ${explanationHTML}
+                                                                              `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
